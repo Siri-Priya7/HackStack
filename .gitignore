@@ -10,3 +10,6 @@ yarn-error.log*
 *.db-wal
 *.db-shm
 .vercel
+
+.vercel
+.env*

@@ -59,6 +59,7 @@ CREATE TABLE IF NOT EXISTS products (
     min_stock_threshold REAL NOT NULL DEFAULT 10.0, -- In base_unit
     reorder_quantity REAL NOT NULL DEFAULT 50.0, -- In base_unit
     barcode VARCHAR(50) DEFAULT NULL,
+    image_url TEXT DEFAULT NULL,
     is_active INTEGER DEFAULT 1,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,

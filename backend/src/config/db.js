@@ -9,19 +9,24 @@ const __dirname = path.dirname(__filename);
 // Detect if running in Vercel Serverless environment
 const isVercel = Boolean(process.env.VERCEL);
 
-// Resolve database paths (supports local dev and Vercel serverless /var/task)
 const cwd = process.cwd();
-const baseDbPath = fs.existsSync(path.join(cwd, 'database/inventory.db'))
-  ? path.join(cwd, 'database/inventory.db')
-  : path.resolve(__dirname, '../../../database/inventory.db');
 
-const schemaPath = fs.existsSync(path.join(cwd, 'database/schema.sql'))
-  ? path.join(cwd, 'database/schema.sql')
-  : path.resolve(__dirname, '../../../database/schema.sql');
+function findDatabaseAsset(subpath) {
+  const candidates = [
+    path.join(cwd, subpath),
+    path.join(cwd, 'backend', subpath),
+    path.resolve(__dirname, '../../', subpath),
+    path.resolve(__dirname, '../../../', subpath)
+  ];
+  for (const p of candidates) {
+    if (fs.existsSync(p)) return p;
+  }
+  return path.resolve(__dirname, '../../', subpath);
+}
 
-const seedPath = fs.existsSync(path.join(cwd, 'database/seed.sql'))
-  ? path.join(cwd, 'database/seed.sql')
-  : path.resolve(__dirname, '../../../database/seed.sql');
+const baseDbPath = findDatabaseAsset('database/inventory.db');
+const schemaPath = findDatabaseAsset('database/schema.sql');
+const seedPath = findDatabaseAsset('database/seed.sql');
 
 // On Vercel Lambda, the deployment filesystem is read-only, but /tmp is fully writable
 const dbPath = isVercel
@@ -46,6 +51,8 @@ if (isVercel && !fs.existsSync(dbPath)) {
   }
 }
 
+import { schemaSql, seedSql } from './initialData.js';
+
 export const db = new Database(dbPath);
 
 // Enable WAL mode for high concurrency & performance
@@ -61,24 +68,30 @@ try {
  */
 export function initializeDatabase() {
   try {
-    // Check if products table exists
-    const tableCheck = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='products'").get();
+    // Check if essential tables exist (users and products)
+    const userTableCheck = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='users'").get();
+    const productTableCheck = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='products'").get();
 
-    if (!tableCheck) {
-      console.log('📦 Database initialized: executing schema.sql...');
-      if (fs.existsSync(schemaPath)) {
-        const schemaSql = fs.readFileSync(schemaPath, 'utf8');
-        db.exec(schemaSql);
-      }
+    if (!userTableCheck || !productTableCheck) {
+      console.log('📦 Database tables missing or incomplete: applying schema and seeds...');
+      db.exec(schemaSql);
 
-      console.log('🌱 Seeding initial Kirana store data from seed.sql...');
-      if (fs.existsSync(seedPath)) {
-        const seedSql = fs.readFileSync(seedPath, 'utf8');
+      console.log('🌱 Seeding initial Kirana store data...');
+      try {
         db.exec(seedSql);
+      } catch (seedErr) {
+        console.warn('Seed notice:', seedErr.message);
       }
       console.log('✅ Database setup and seed complete.');
     } else {
       console.log('✅ Database connected to existing schema at:', dbPath);
+    }
+
+    // Ensure image_url column exists in products (schema upgrade safeguard)
+    try {
+      db.exec("ALTER TABLE products ADD COLUMN image_url TEXT DEFAULT NULL");
+    } catch (e) {
+      // Column already exists
     }
   } catch (err) {
     console.error('❌ Database initialization error:', err);

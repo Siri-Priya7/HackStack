@@ -1,6 +1,9 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
 import authRoutes from './routes/authRoutes.js';
 import productRoutes from './routes/productRoutes.js';
 import inventoryRoutes from './routes/inventoryRoutes.js';
@@ -9,6 +12,9 @@ import shopRoutes from './routes/shopRoutes.js';
 import ttsRoutes from './routes/ttsRoutes.js';
 
 dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -52,6 +58,41 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Serve frontend static assets in production if built
+const frontendDistCandidates = [
+  path.resolve(__dirname, '../../../frontend/dist'),
+  path.resolve(__dirname, '../../frontend/dist'),
+  path.resolve(process.cwd(), 'frontend/dist')
+];
+const frontendDistPath = frontendDistCandidates.find(p => fs.existsSync(p));
+
+if (frontendDistPath) {
+  console.log(`📂 Serving frontend static assets from: ${frontendDistPath}`);
+  app.use(express.static(frontendDistPath));
+
+  // SPA fallback for non-API client routes
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api')) {
+      return next();
+    }
+    const indexPath = path.resolve(frontendDistPath, 'index.html');
+    res.sendFile(indexPath, (err) => {
+      if (err) {
+        console.error('res.sendFile error for:', indexPath, err.message);
+        next(err);
+      }
+    });
+  });
+}
+
+// 404 handler for unhandled API routes
+app.use('/api', (req, res) => {
+  res.status(404).json({
+    success: false,
+    error: `API route not found: ${req.method} ${req.originalUrl}`
+  });
+});
+
 // Global Error Handler
 app.use((err, req, res, next) => {
   console.error('Unhandled server error:', err);
@@ -61,12 +102,11 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Only start HTTP listener when server.js is executed directly (not when imported by Vercel serverless)
-const isDirectRun = process.argv[1] && (process.argv[1].endsWith('server.js') || process.argv[1].endsWith('server'));
-if (!process.env.VERCEL && isDirectRun) {
-  app.listen(PORT, () => {
-    console.log(`🚀 Voice Inventory Backend running on http://localhost:${PORT}`);
-    console.log(`📡 API Endpoints available at http://localhost:${PORT}/api/`);
+// Start HTTP listener (Render, Docker, Local, or non-Vercel environments)
+if (!process.env.VERCEL) {
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Voice Inventory Server running on http://0.0.0.0:${PORT}`);
+    console.log(`📡 Health check available at http://0.0.0.0:${PORT}/api/health`);
   });
 }
 

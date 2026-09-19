@@ -6,6 +6,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![UI: React + Vite](https://img.shields.io/badge/Frontend-React%2018%20%2B%20Vite-blue.svg)](https://vitejs.dev/)
 [![Backend: Express + SQLite](https://img.shields.io/badge/Backend-Express%20%2B%20SQLite-orange.svg)](https://expressjs.com/)
+[![Deploy to Render](https://img.shields.io/badge/Deploy%20to-Render-46E3B7?logo=render&logoColor=white)](https://render.com)
 
 ---
 
@@ -123,6 +124,19 @@ npm run dev
 
 Visit **[http://localhost:5173](http://localhost:5173)** in your browser.
 Click **"Login as Demo Store"** for immediate access!
+
+---
+
+## 🌐 Deploy to Render (render.com)
+
+You can deploy Apna Kirana AI with **1 click** as a unified full-stack service on Render:
+
+1. Push your changes to your GitHub repository.
+2. In the [Render Dashboard](https://dashboard.render.com), click **New +** $\rightarrow$ **Blueprint**.
+3. Select your repository. Render will automatically detect [`render.yaml`](./render.yaml).
+4. Click **Apply** to deploy!
+
+For a full step-by-step walkthrough, environment variable details, and manual setup instructions, see the [Render Deployment Guide](docs/render-deployment.md).
 
 ---
 

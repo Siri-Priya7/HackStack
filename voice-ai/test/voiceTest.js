@@ -12,9 +12,9 @@ const mockCatalog = [
 ];
 
 // Test 1: Language Detection
-assert.strictEqual(detectLanguage('5 bori chawal add karo').language, 'hinglish');
-assert.strictEqual(detectLanguage('पाँच बोरी चावल आया').language, 'hi');
-assert.strictEqual(detectLanguage('Add 10 packets of milk').language, 'en');
+assert.strictEqual(detectLanguage('5 bori chawal add karo').dialect, 'hinglish');
+assert.strictEqual(detectLanguage('पाँच बोरी चावल आया').language, 'hi-IN');
+assert.strictEqual(detectLanguage('Add 10 packets of milk').language, 'en-IN');
 
 // Test 2: Intent Parsing
 assert.strictEqual(parseIntent('5 bori chawal aaya').intent, 'ADD_STOCK');

@@ -146,8 +146,11 @@ export function speakText(text, langCode = 'en-IN', options = {}) {
     window.location.hostname === '127.0.0.1'
   );
   
-  // Base URL for backend TTS
-  const backendBase = isLocalHost ? 'http://localhost:5000' : '';
+  // Base URL for backend TTS (supports unified hosting, separate VITE_API_URL, and local dev)
+  const envApiUrl = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) || '';
+  const backendBase = envApiUrl
+    ? envApiUrl.replace(/\/api\/?$/, '')
+    : (isLocalHost ? 'http://localhost:5000' : '');
   const ttsUrl = `${backendBase}/api/voice/tts?text=${encodeURIComponent(cleanText)}&lang=${encodeURIComponent(langCode)}`;
 
   try {

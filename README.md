@@ -14,7 +14,7 @@
 Many small businesses across India still manage inventory mentally, in notebooks, or on WhatsApp. Existing inventory software creates severe friction:
 - **Requires tedious typing** on small screens.
 - **English-only or technical ERP jargon** alienates shopkeepers with low digital literacy.
-- **Forces rigid standard units** (kg/g/litres) instead of the **customary trade packaging** shopkeepers actually use (*bori*, *peti*, *dozen*, *quintal*, *palla*, *packet*).
+- **Forces rigid standard units** (kg/g/litres) instead of the **customary trade packaging** shopkeepers actually use (*bori*, *peti*, *dozen*, *quintal*, *palla*, *packet*)
 
 ## 💡 The Solution
 A voice-first inventory solution where shopkeepers can speak naturally:

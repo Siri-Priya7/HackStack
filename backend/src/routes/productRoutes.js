@@ -7,6 +7,7 @@ const router = express.Router();
 router.use(authMiddleware);
 
 router.get('/', productController.getProducts);
+router.post('/detect-image', productController.detectImage);
 router.get('/:id', productController.getProductById);
 router.post('/', productController.createProduct);
 router.put('/:id', productController.updateProduct);

@@ -21,11 +21,33 @@ export function authMiddleware(req, res, next) {
   }
 
   // Graceful Demo / Guest Fallback for frictionless Hackathon evaluation
-  const demoUser = User.findById(1);
+  // Defaults to Demo Shop Owner (id=2, Ramesh Sharma, shop_id=1)
+  const demoUser = User.findById(2) || User.findById(1);
   if (demoUser) {
     req.user = demoUser;
     return next();
   }
 
   return res.status(401).json({ success: false, error: 'Unauthorized. Please login.' });
+}
+
+/**
+ * Middleware to enforce role-based access control
+ * @param  {...string} allowedRoles - 'platform_admin', 'shop_owner', 'staff'
+ */
+export function requireRole(...allowedRoles) {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ success: false, error: 'Authentication required.' });
+    }
+
+    if (!allowedRoles.includes(req.user.role)) {
+      return res.status(403).json({
+        success: false,
+        error: `Access denied. Role '${req.user.role}' does not have permission for this action. Allowed roles: ${allowedRoles.join(', ')}.`
+      });
+    }
+
+    next();
+  };
 }

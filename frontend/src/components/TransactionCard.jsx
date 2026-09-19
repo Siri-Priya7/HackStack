@@ -1,29 +1,39 @@
 import React, { useState } from 'react';
 import { ArrowDownLeft, ArrowUpRight, RotateCcw, Mic, Check } from 'lucide-react';
 import { transactionAPI } from '../services/api';
+import { useAuth } from '../context/AuthContext';
+import { localizeEntity } from '../utils/transliterate';
 
 export default function TransactionCard({ tx, onUndone, language = 'hi-IN' }) {
+  const { t, isStaff } = useAuth();
   const [undoing, setUndoing] = useState(false);
   const [undone, setUndone] = useState(false);
+  const [confirmUndo, setConfirmUndo] = useState(false);
+  const [errorMsg, setErrorMsg] = useState(null);
 
   const isAdd = tx.type === 'IN';
 
   const handleUndo = async () => {
-    if (!window.confirm(language === 'hi-IN' ? 'क्या आप इस एंट्री को वापस (Undo) करना चाहते हैं?' : 'Undo this stock transaction?')) {
+    if (!confirmUndo) {
+      setConfirmUndo(true);
       return;
     }
     setUndoing(true);
+    setErrorMsg(null);
     try {
       const res = await transactionAPI.undoTransaction(tx.id);
       if (res.data.success) {
         setUndone(true);
+        setConfirmUndo(false);
         if (onUndone) {
           setTimeout(() => onUndone(tx.id), 800);
         }
       }
     } catch (err) {
       console.error('Undo error:', err);
-      alert(err.response?.data?.error || 'Could not undo transaction.');
+      setErrorMsg(err.response?.data?.error || 'Could not undo transaction.');
+      setConfirmUndo(false);
+      setTimeout(() => setErrorMsg(null), 3500);
     } finally {
       setUndoing(false);
     }
@@ -51,12 +61,12 @@ export default function TransactionCard({ tx, onUndone, language = 'hi-IN' }) {
         <div>
           <div className="flex items-center gap-2">
             <h4 className="font-extrabold text-slate-900 text-sm">
-              {tx.product_name || 'Item'}
+              {localizeEntity(tx.product_name, language) || 'Item'}
             </h4>
             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${
               isAdd ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
             }`}>
-              {isAdd ? (language === 'hi-IN' ? 'स्टॉक आया' : 'Restock') : (language === 'hi-IN' ? 'बिका' : 'Sold')}
+              {isAdd ? t('inStock') : t('todaySales')}
             </span>
           </div>
 
@@ -86,16 +96,42 @@ export default function TransactionCard({ tx, onUndone, language = 'hi-IN' }) {
           </span>
         )}
 
-        {!undone && (
-          <button
-            onClick={handleUndo}
-            disabled={undoing}
-            className="mt-1 flex items-center gap-1 text-[11px] font-bold text-slate-400 hover:text-rose-600 transition-colors"
-            title="Undo this transaction"
-          >
-            <RotateCcw className="w-3 h-3" />
-            <span>{undoing ? '...' : (language === 'hi-IN' ? 'वापस लें' : 'Undo')}</span>
-          </button>
+        {!undone && !isStaff && (
+          <div className="mt-1 flex items-center gap-1.5">
+            {confirmUndo ? (
+              <div className="flex items-center gap-1.5 animate-fade-in">
+                <button
+                  onClick={handleUndo}
+                  disabled={undoing}
+                  className="px-2 py-0.5 rounded-lg bg-rose-500 hover:bg-rose-600 text-white text-[11px] font-bold shadow-sm"
+                >
+                  {undoing ? '...' : 'Confirm?'}
+                </button>
+                <button
+                  onClick={() => setConfirmUndo(false)}
+                  className="text-[11px] text-slate-400 hover:text-slate-600 font-medium"
+                >
+                  ✕
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={handleUndo}
+                disabled={undoing}
+                className="flex items-center gap-1 text-[11px] font-bold text-slate-400 hover:text-rose-600 transition-colors"
+                title="Undo this transaction"
+              >
+                <RotateCcw className="w-3 h-3" />
+                <span>{undoing ? '...' : t('undo')}</span>
+              </button>
+            )}
+          </div>
+        )}
+
+        {errorMsg && (
+          <p className="text-[10px] text-rose-500 font-semibold mt-1 animate-fade-in">
+            {errorMsg}
+          </p>
         )}
       </div>
     </div>

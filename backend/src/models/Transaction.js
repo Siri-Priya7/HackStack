@@ -1,30 +1,43 @@
 import db from '../config/db.js';
 
 export class Transaction {
-  static getAllByUser(userId, limit = 50) {
+  static getAllByShop(shopId, limit = 50) {
     return db.prepare(`
       SELECT 
         t.*,
         p.name as product_name,
         p.category as product_category,
-        p.base_unit
+        p.base_unit,
+        u.name as user_name,
+        u.role as user_role
       FROM transactions t
       JOIN products p ON t.product_id = p.id
-      WHERE t.user_id = ?
+      LEFT JOIN users u ON t.user_id = u.id
+      WHERE t.shop_id = ?
       ORDER BY t.created_at DESC
       LIMIT ?
-    `).all(userId, limit);
+    `).all(shopId, limit);
   }
 
-  static getTodayByUser(userId) {
+  // Alias for backward compatibility
+  static getAllByUser(shopOrUserId, limit = 50) {
+    return this.getAllByShop(shopOrUserId, limit);
+  }
+
+  static getTodayByShop(shopId) {
     return db.prepare(`
       SELECT * FROM transactions 
-      WHERE user_id = ? AND date(created_at) = date('now', 'localtime')
+      WHERE shop_id = ? AND date(created_at) = date('now', 'localtime')
       ORDER BY created_at DESC
-    `).all(userId);
+    `).all(shopId);
+  }
+
+  static getTodayByUser(shopOrUserId) {
+    return this.getTodayByShop(shopOrUserId);
   }
 
   static create({
+    shop_id,
     user_id,
     product_id,
     type, // 'IN', 'OUT', 'ADJUST'
@@ -38,15 +51,16 @@ export class Transaction {
     source = 'voice',
     notes = null
   }) {
+    const targetShopId = shop_id || 1;
     const stmt = db.prepare(`
       INSERT INTO transactions (
-        user_id, product_id, type, quantity, unit, quantity_base,
+        shop_id, user_id, product_id, type, quantity, unit, quantity_base,
         unit_price, total_amount, voice_transcript, language_detected, source, notes
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     const result = stmt.run(
-      user_id, product_id, type, quantity, unit, quantity_base,
+      targetShopId, user_id, product_id, type, quantity, unit, quantity_base,
       unit_price, total_amount, voice_transcript, language_detected, source, notes
     );
 

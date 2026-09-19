@@ -2,9 +2,45 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Mic, MicOff, Volume2, AlertCircle, CheckCircle, RefreshCw, Sparkles, Send } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { inventoryAPI } from '../services/api';
+import { speakText as speakAudio, stopSpeaking } from '../utils/speechService';
+
+function getSampleChips(language) {
+  if (language === 'hi-IN') {
+    return ['5 बोरी चावल ऐड करो', '10 पैकेट दूध बेचा', 'चीनी कितनी बची है?', '2 बोरी आटा आया', 'आज का हिसाब बताओ'];
+  }
+  if (language === 'mr-IN') {
+    return ['5 गोणी तांदूळ आले', '10 पाकीट दूध विकले', 'साखर किती उरली आहे?', 'आजचा हिशोब सांगा'];
+  }
+  if (language === 'bn-IN') {
+    return ['৫ বস্তা চাল এসেছে', '১০ প্যাকেট দুধ বিক্রি', 'চিনি কতটুকু আছে?', 'আজকের হিসাব দেখাও'];
+  }
+  if (language === 'te-IN') {
+    return ['5 బస్తాల బియ్యం చేర్చు', '10 ప్యాకెట్ల పాలు అమ్మాను', 'చక్కెర ఎంత మిగిలింది?', 'నేటి లెక్క చెప్పు'];
+  }
+  if (language === 'ta-IN') {
+    return ['5 மூட்டை அரிசி சேர்', '10 பாக்கெட் பால் விற்றது', 'சர்க்கரை எவ்வளவு உள்ளது?', 'இன்றைய கணக்கு காட்டு'];
+  }
+  if (language === 'gu-IN') {
+    return ['5 બોરી ચોખા ઉમેરો', '10 પેકેટ દૂધ વેચ્યું', 'ખાંડ કેટલી બાકી છે?', 'આજનો હિસાબ બતાવો'];
+  }
+  if (language === 'kn-IN') {
+    return ['5 ಚೀಲ ಅಕ್ಕಿ ಸೇರಿಸಿ', '10 ಪ್ಯಾಕೆಟ್ ಹಾಲು ಮಾರಾಟ', 'ಸಕ್ಕರೆ ಎಷ್ಟು ಉಳಿದಿದೆ?', 'ಇಂದಿನ ಲೆಕ್ಕ ತೋರಿಸಿ'];
+  }
+  if (language === 'ml-IN') {
+    return ['5 ചാക്ക് അരി ചേർക്കൂ', '10 പാക്കറ്റ് പാൽ വിറ്റു', 'പഞ്ചസാര എത്ര ബാക്കിയുണ്ട്?', 'ഇന്നത്തെ കണക്ക് പറയൂ'];
+  }
+  if (language === 'pa-IN') {
+    return ['5 ਬੋਰੀ ਚੌਲ ਜੋੜੋ', '10 ਪੈਕਟ ਦੁੱਧ ਵੇਚਿਆ', 'ਖੰਡ ਕਿੰਨੀ ਬਚੀ ਹੈ?', 'ਅੱਜ ਦਾ ਹਿਸਾਬ ਦੱਸੋ'];
+  }
+  if (language === 'or-IN') {
+    return ['5 ବସ୍ତା ଚାଉଳ ଯୋଡନ୍ତୁ', '10 ପ୍ୟାକେଟ କ୍ଷୀର ବିକ୍ରି', 'ଚିନି କେତେ ବାକି ଅଛି?', 'ଆଜିର ହିସାବ ଦେଖାନ୍ତୁ'];
+  }
+  // Default: English
+  return ['Add 5 bags of rice', 'Sold 10 packets of milk', 'How much sugar is left?', 'Add 2 bags of wheat flour', 'Show today summary'];
+}
 
 export default function VoiceButton({ onCommandSuccess, className = '' }) {
-  const { language } = useAuth();
+  const { language, t } = useAuth();
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [interimTranscript, setInterimTranscript] = useState('');
@@ -64,14 +100,10 @@ export default function VoiceButton({ onCommandSuccess, className = '' }) {
     }
   }, [language]);
 
-  // Text-To-Speech response output
+  // Text-To-Speech response output via universal speechService
   const speakResponse = (text) => {
-    if ('speechSynthesis' in window && text) {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = language === 'hi-IN' ? 'hi-IN' : 'en-IN';
-      utterance.rate = 0.95;
-      window.speechSynthesis.speak(utterance);
+    if (text) {
+      speakAudio(text, language || 'hi-IN');
     }
   };
 
@@ -146,7 +178,7 @@ export default function VoiceButton({ onCommandSuccess, className = '' }) {
           </span>
         </div>
         <span className="text-sm tracking-wide">
-          {language === 'hi-IN' ? 'बोलकर स्टॉक बदलें' : 'Speak to Update Stock'}
+          {t('speakToUpdate')}
         </span>
       </button>
 
@@ -167,12 +199,10 @@ export default function VoiceButton({ onCommandSuccess, className = '' }) {
                 ✕
               </button>
               <h3 className="text-lg font-extrabold tracking-tight">
-                {language === 'hi-IN' ? 'आवाज सहायक (Voice Assistant)' : 'Voice Assistant'}
+                {t('voiceAssistant')}
               </h3>
               <p className="text-xs text-orange-100 mt-1">
-                {language === 'hi-IN'
-                  ? 'अपनी भाषा में बोलें: "5 बोरी चावल आया" या "10 किलो चीनी बेचा"'
-                  : 'Speak naturally: "5 bori chawal add karo" or "10 kg sugar sold"'}
+                {t('clickToSpeak')}
               </p>
             </div>
 
@@ -209,10 +239,10 @@ export default function VoiceButton({ onCommandSuccess, className = '' }) {
               {/* Status Indicator */}
               <p className="text-sm font-semibold text-slate-700 mt-2">
                 {processing
-                  ? 'AI स्टॉक समझ रहा है... (Processing)'
+                  ? t('processing')
                   : isListening
-                  ? 'सुन रहा हूँ... बोलिए (Listening...)'
-                  : 'माइक पर क्लिक करें या नीचे लिखें'}
+                  ? t('listening')
+                  : t('clickToSpeak')}
               </p>
 
               {/* Live Transcript Box */}
@@ -223,9 +253,7 @@ export default function VoiceButton({ onCommandSuccess, className = '' }) {
                   <p className="text-slate-800 font-bold text-base">"{transcript}"</p>
                 ) : (
                   <p className="text-slate-400 text-xs">
-                    {language === 'hi-IN'
-                      ? 'उदाहरण: "5 बोरी चावल आया", "2 पैकेट दूध बेचा", "चीनी कितनी बची है?"'
-                      : 'E.g., "5 bori basmati chawal add karo", "2 packet milk sold"'}
+                    {language === 'hi-IN' ? 'नमूना: "5 बोरी चावल जोड़ो", "2 पैकेट दूध बेचा"' : 'Sample: "Add 5 bags of rice", "Sold 2 packets of milk"'}
                   </p>
                 )}
               </div>
@@ -275,7 +303,7 @@ export default function VoiceButton({ onCommandSuccess, className = '' }) {
                     type="text"
                     value={manualInput}
                     onChange={(e) => setManualInput(e.target.value)}
-                    placeholder={language === 'hi-IN' ? 'यहाँ लिखकर भी भेज सकते हैं...' : 'Or type your command here...'}
+                    placeholder={t('clickToSpeak')}
                     className="flex-1 bg-slate-100 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500"
                   />
                   <button
@@ -283,7 +311,6 @@ export default function VoiceButton({ onCommandSuccess, className = '' }) {
                     disabled={!manualInput.trim() || processing}
                     className="bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1 transition-all"
                   >
-                    <span>भेजें</span>
                     <Send className="w-3.5 h-3.5" />
                   </button>
                 </form>
@@ -293,16 +320,10 @@ export default function VoiceButton({ onCommandSuccess, className = '' }) {
               <div className="w-full mt-4">
                 <div className="flex items-center gap-1.5 text-xs font-bold text-slate-500 mb-2">
                   <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                  <span>तुरंत टेस्ट करने के लिए क्लिक करें (Sample Chips):</span>
+                  <span>{t('sampleChips')}:</span>
                 </div>
                 <div className="flex flex-wrap gap-1.5">
-                  {[
-                    '5 bori chawal add karo',
-                    '10 packet doodh becha',
-                    'Cheeni kitni bachi hai?',
-                    '2 bori aashirvaad atta aaya',
-                    'Aaj ka hisab batao'
-                  ].map((chip, idx) => (
+                  {getSampleChips(language).map((chip, idx) => (
                     <button
                       key={idx}
                       type="button"
@@ -312,7 +333,7 @@ export default function VoiceButton({ onCommandSuccess, className = '' }) {
                       }}
                       className="bg-orange-50 hover:bg-orange-100 text-orange-800 border border-orange-200/60 rounded-lg px-2.5 py-1 text-xs font-medium transition-colors"
                     >
-                      "{chip}"
+                      {chip}
                     </button>
                   ))}
                 </div>
@@ -327,7 +348,7 @@ export default function VoiceButton({ onCommandSuccess, className = '' }) {
                 onClick={() => setIsModalOpen(false)}
                 className="text-slate-700 font-bold hover:underline"
               >
-                बंद करें (Close)
+                Close ✕
               </button>
             </div>
           </div>

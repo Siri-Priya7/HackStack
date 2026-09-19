@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { Store, Phone, Lock, Sparkles, ArrowRight, CheckCircle } from 'lucide-react';
 
 export default function Login({ onSwitchToRegister }) {
-  const { login, loading } = useAuth();
+  const { login, loading, t } = useAuth();
   const [phone, setPhone] = useState('9876543210');
   const [password, setPassword] = useState('kirana123');
   const [error, setError] = useState(null);
@@ -34,10 +34,10 @@ export default function Login({ onSwitchToRegister }) {
             <Store className="w-8 h-8" />
           </div>
           <h1 className="text-2xl font-black text-slate-900 tracking-tight">
-            Voice Inventory
+            {t('appName')}
           </h1>
           <p className="text-xs text-slate-500 font-medium">
-            आवाज से चलने वाली आसान इन्वेंटरी (Kirana Management)
+            {t('subtitle')}
           </p>
         </div>
 
@@ -53,7 +53,7 @@ export default function Login({ onSwitchToRegister }) {
             disabled={loading}
             className="w-full bg-orange-500 hover:bg-orange-600 text-white font-extrabold py-2.5 rounded-xl text-xs shadow-md shadow-orange-500/25 transition-all flex items-center justify-center gap-1.5"
           >
-            <span>Login as Demo Store (Ramesh Sharma)</span>
+            <span>{t('loginDemo')}</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -105,13 +105,13 @@ export default function Login({ onSwitchToRegister }) {
             disabled={loading}
             className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 rounded-xl text-xs transition-colors shadow-sm"
           >
-            {loading ? 'Logging in...' : 'Login to Store (लॉगिन करें)'}
+            {loading ? '...' : t('voiceAssistant')}
           </button>
         </form>
 
         {/* Switch to Register */}
         <div className="text-center pt-2 text-xs text-slate-500">
-          <span>नया खाता खोलना है? </span>
+          <span>{t('welcomeBack')}? </span>
           <button
             onClick={onSwitchToRegister}
             className="font-bold text-orange-600 hover:underline"

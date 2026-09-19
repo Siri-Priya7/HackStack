@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
 import { AlertTriangle, ShoppingCart, Check, ArrowRight } from 'lucide-react';
 import { inventoryAPI } from '../services/api';
+import { useAuth } from '../context/AuthContext';
+import { localizeEntity } from '../utils/transliterate';
 
 export default function AlertCard({ alert, onResolved, language = 'hi-IN' }) {
+  const { t } = useAuth();
   const [ordering, setOrdering] = useState(false);
   const [ordered, setOrdered] = useState(false);
 
@@ -43,12 +46,12 @@ export default function AlertCard({ alert, onResolved, language = 'hi-IN' }) {
           <div>
             <div className="flex items-center gap-2">
               <h4 className="font-extrabold text-slate-900 text-base">
-                {alert.productName || alert.message}
+                {localizeEntity(alert.productName, language) || alert.message}
               </h4>
               <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${
                 isCritical ? 'bg-rose-200 text-rose-800' : 'bg-amber-200 text-amber-800'
               }`}>
-                {isCritical ? (language === 'hi-IN' ? 'खत्म' : 'OUT') : (language === 'hi-IN' ? 'कम स्टॉक' : 'LOW')}
+                {isCritical ? t('outOfStock') : t('lowStock')}
               </span>
             </div>
 
@@ -58,7 +61,7 @@ export default function AlertCard({ alert, onResolved, language = 'hi-IN' }) {
 
             {alert.suggestionText && (
               <div className="mt-2 text-xs font-bold text-slate-800 bg-white/80 border border-slate-200/60 rounded-lg px-2.5 py-1.5 inline-flex items-center gap-1.5">
-                <span className="text-orange-600">💡 {language === 'hi-IN' ? 'सुझाव (Suggestion)' : 'Reorder'}:</span>
+                <span className="text-orange-600">💡 {t('suggestedReorder') || 'Reorder'}:</span>
                 <span>{alert.suggestionText}</span>
               </div>
             )}
@@ -70,7 +73,7 @@ export default function AlertCard({ alert, onResolved, language = 'hi-IN' }) {
           {ordered ? (
             <span className="flex items-center gap-1 text-emerald-700 bg-emerald-100 font-bold px-3 py-1.5 rounded-xl text-xs">
               <Check className="w-4 h-4" />
-              <span>{language === 'hi-IN' ? 'ऑर्डर दर्ज' : 'Ordered'}</span>
+              <span>{t('ordered')}</span>
             </span>
           ) : (
             <button
@@ -81,8 +84,8 @@ export default function AlertCard({ alert, onResolved, language = 'hi-IN' }) {
               <ShoppingCart className="w-3.5 h-3.5 text-orange-400" />
               <span>
                 {ordering 
-                  ? (language === 'hi-IN' ? 'दर्ज हो रहा...' : 'Adding...') 
-                  : (language === 'hi-IN' ? 'तुरंत रीऑर्डर करें' : 'Quick Reorder')}
+                  ? '...' 
+                  : t('quickReorder')}
               </span>
             </button>
           )}

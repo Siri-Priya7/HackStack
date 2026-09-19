@@ -5,14 +5,18 @@ import { InventoryService } from '../services/inventoryService.js';
 import {
   generateInventorySummary,
   scanLowStockItems,
-  generateReorderSuggestion,
-  calculateStockChange
+  generateReorderSuggestion
 } from '../../../inventory-engine/src/index.js';
 
 export const inventoryController = {
   async getInventory(req, res) {
     try {
-      const items = Inventory.getAllByUser(req.user.id);
+      const shopId = req.user.shop_id || (req.user.role === 'platform_admin' ? (req.query.shop_id || 1) : null);
+      if (!shopId) {
+        return res.status(400).json({ success: false, error: 'No shop assigned to user.' });
+      }
+
+      const items = Inventory.getAllByShop(shopId);
       return res.json({ success: true, data: items });
     } catch (err) {
       console.error('Error fetching inventory:', err);
@@ -22,8 +26,13 @@ export const inventoryController = {
 
   async getInventorySummary(req, res) {
     try {
-      const inventoryList = Inventory.getAllByUser(req.user.id);
-      const todayTransactions = Transaction.getTodayByUser(req.user.id);
+      const shopId = req.user.shop_id || (req.user.role === 'platform_admin' ? (req.query.shop_id || 1) : null);
+      if (!shopId) {
+        return res.status(400).json({ success: false, error: 'No shop assigned to user.' });
+      }
+
+      const inventoryList = Inventory.getAllByShop(shopId);
+      const todayTransactions = Transaction.getTodayByShop(shopId);
       const summary = generateInventorySummary(inventoryList, todayTransactions);
 
       return res.json({ success: true, data: summary });
@@ -35,43 +44,61 @@ export const inventoryController = {
 
   async processVoiceCommand(req, res) {
     try {
-      const { transcript, dryRun } = req.body;
+      const { transcript, dryRun, language: bodyLang } = req.body;
+      const lang = bodyLang || req.headers['accept-language'] || req.user?.preferred_language || 'en-IN';
+      const shopId = req.user.shop_id;
+
+      if (!shopId) {
+        return res.status(400).json({
+          success: false,
+          error: 'Voice commands must be executed within a valid shop context.',
+          spokenFeedback: lang?.startsWith('hi') ? 'दुकान खाता आवश्यक है।' : 'Shop account required.'
+        });
+      }
 
       if (!transcript) {
         return res.status(400).json({
           success: false,
           error: 'Voice transcript is required.',
-          spokenFeedback: 'Kripya kuch bolein.'
+          spokenFeedback: lang?.startsWith('hi') ? 'कृपया कुछ बोलें।' : 'Please speak a command.'
         });
       }
 
-      const result = await InventoryService.handleVoiceCommand(transcript, req.user.id, dryRun);
+      const result = await InventoryService.handleVoiceCommand(transcript, shopId, req.user.id, dryRun, lang);
       return res.json(result);
     } catch (err) {
       console.error('Voice processing error:', err);
+      const isHi = (req.body?.language || req.headers['accept-language'] || '')?.startsWith('hi');
       return res.status(500).json({
         success: false,
         error: 'Error processing voice command: ' + err.message,
-        spokenFeedback: 'Voice command process karne mein error aaya.'
+        spokenFeedback: isHi ? 'कमांड प्रोसेस करने में समस्या आई।' : 'Error processing voice command.'
       });
     }
   },
 
   async quickAdjust(req, res) {
     try {
-      const { productId, type, quantity, unit } = req.body;
+      const { productId, type, quantity, unit, language: bodyLang } = req.body;
+      const lang = bodyLang || req.headers['accept-language'] || req.user?.preferred_language || 'en-IN';
+      const shopId = req.user.shop_id;
       const product = Product.findById(productId);
-      if (!product || product.user_id !== req.user.id) {
-        return res.status(404).json({ success: false, error: 'Product not found.' });
+
+      if (!product || (req.user.role !== 'platform_admin' && product.shop_id !== shopId)) {
+        return res.status(404).json({ success: false, error: 'Product not found or unauthorized.' });
       }
 
-      const intent = type === 'IN' ? 'ADD_STOCK' : 'REMOVE_STOCK';
-      const fakeTranscript = `Manual ${type}: ${quantity} ${unit} ${product.name}`;
+      const isEnglish = !lang?.startsWith('hi');
+      const voiceCommand = isEnglish
+        ? (type === 'IN' ? `Add ${quantity} ${unit} of ${product.name}` : `Sold ${quantity} ${unit} of ${product.name}`)
+        : `${quantity} ${unit} ${product.name} ${type === 'IN' ? 'जोड़ो' : 'बेचा'}`;
 
       const result = await InventoryService.handleVoiceCommand(
-        `${quantity} ${unit} ${product.name} ${type === 'IN' ? 'add karo' : 'becha'}`,
+        voiceCommand,
+        shopId,
         req.user.id,
-        false
+        false,
+        lang
       );
 
       return res.json(result);
@@ -83,7 +110,12 @@ export const inventoryController = {
 
   async getAlerts(req, res) {
     try {
-      const inventoryList = Inventory.getAllByUser(req.user.id);
+      const shopId = req.user.shop_id || (req.user.role === 'platform_admin' ? (req.query.shop_id || 1) : null);
+      if (!shopId) {
+        return res.status(400).json({ success: false, error: 'No shop assigned to user.' });
+      }
+
+      const inventoryList = Inventory.getAllByShop(shopId);
       const alerts = scanLowStockItems(inventoryList);
       const suggestions = alerts.map(a => generateReorderSuggestion(a));
 

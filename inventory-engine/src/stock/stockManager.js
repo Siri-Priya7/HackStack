@@ -55,12 +55,33 @@ export function executeStockOperation(command, currentStockBase = 0) {
 
   // 4. Generate natural shopkeeper voice confirmation
   let spokenFeedback = '';
-  if (intent === 'ADD_STOCK') {
-    spokenFeedback = `${quantity} ${unit} ${product.name} stock mein add ho gaya. Ab kul ${calc.displayString} hai.`;
-  } else if (intent === 'REMOVE_STOCK') {
-    spokenFeedback = `${quantity} ${unit} ${product.name} sell ho gaya. Ab bacha hai ${calc.displayString}.`;
+  const isEn = language === 'en' || language === 'en-IN' || language === 'english';
+  const isHi = language === 'hi' || language === 'hi-IN';
+
+  if (isEn) {
+    if (intent === 'ADD_STOCK') {
+      spokenFeedback = `Added ${quantity} ${unit} of ${product.name}. Current stock is now ${calc.displayString}.`;
+    } else if (intent === 'REMOVE_STOCK') {
+      spokenFeedback = `Sold ${quantity} ${unit} of ${product.name}. Remaining stock is ${calc.displayString}.`;
+    } else {
+      spokenFeedback = `Stock updated for ${product.name}. Current balance is ${calc.displayString}.`;
+    }
+  } else if (isHi) {
+    if (intent === 'ADD_STOCK') {
+      spokenFeedback = `${quantity} ${unit} ${product.name} स्टॉक में जुड़ गया। अब कुल ${calc.displayString} है।`;
+    } else if (intent === 'REMOVE_STOCK') {
+      spokenFeedback = `${quantity} ${unit} ${product.name} बिक गया। अब बचा है ${calc.displayString}।`;
+    } else {
+      spokenFeedback = `${product.name} का स्टॉक अब ${calc.displayString} हो गया है।`;
+    }
   } else {
-    spokenFeedback = `${product.name} ka stock ab ${calc.displayString} update ho gaya hai.`;
+    if (intent === 'ADD_STOCK') {
+      spokenFeedback = `${quantity} ${unit} ${product.name} stock mein add ho gaya. Ab kul ${calc.displayString} hai.`;
+    } else if (intent === 'REMOVE_STOCK') {
+      spokenFeedback = `${quantity} ${unit} ${product.name} sell ho gaya. Ab bacha hai ${calc.displayString}.`;
+    } else {
+      spokenFeedback = `${product.name} ka stock ab ${calc.displayString} update ho gaya hai.`;
+    }
   }
 
   return {

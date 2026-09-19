@@ -7,11 +7,15 @@
 export const SUPPORTED_LANGUAGES = [
   { code: 'hi-IN', label: 'हिन्दी (Hindi)', nativeLabel: 'हिन्दी' },
   { code: 'en-IN', label: 'English (India)', nativeLabel: 'Hinglish / English' },
-  { code: 'ta-IN', label: 'தமிழ் (Tamil)', nativeLabel: 'தமிழ்' },
-  { code: 'te-IN', label: 'తెలుగు (Telugu)', nativeLabel: 'తెలుగు' },
   { code: 'bn-IN', label: 'বাংলা (Bengali)', nativeLabel: 'বাংলা' },
   { code: 'mr-IN', label: 'मराठी (Marathi)', nativeLabel: 'मराठी' },
-  { code: 'gu-IN', label: 'ગુજરાતી (Gujarati)', nativeLabel: 'ગુજરાતી' }
+  { code: 'te-IN', label: 'తెలుగు (Telugu)', nativeLabel: 'తెలుగు' },
+  { code: 'ta-IN', label: 'தமிழ் (Tamil)', nativeLabel: 'தமிழ்' },
+  { code: 'gu-IN', label: 'ગુજરાતી (Gujarati)', nativeLabel: 'ગુજરાતી' },
+  { code: 'kn-IN', label: 'ಕನ್ನಡ (Kannada)', nativeLabel: 'ಕನ್ನಡ' },
+  { code: 'ml-IN', label: 'മലയാളം (Malayalam)', nativeLabel: 'മലയാളം' },
+  { code: 'pa-IN', label: 'ਪੰਜਾਬੀ (Punjabi)', nativeLabel: 'ਪੰਜਾਬੀ' },
+  { code: 'or-IN', label: 'ଓଡ଼ିଆ (Odia)', nativeLabel: 'ଓଡ଼ିଆ' }
 ];
 
 /**

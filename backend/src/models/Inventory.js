@@ -1,7 +1,7 @@
 import db from '../config/db.js';
 
 export class Inventory {
-  static getAllByUser(userId) {
+  static getAllByShop(shopId) {
     const rows = db.prepare(`
       SELECT 
         i.*,
@@ -14,10 +14,11 @@ export class Inventory {
         p.purchase_price,
         p.selling_price,
         p.min_stock_threshold,
-        p.reorder_quantity
+        p.reorder_quantity,
+        p.image_url
       FROM inventory i
       JOIN products p ON i.product_id = p.id
-      WHERE i.user_id = ? AND p.is_active = 1
+      WHERE i.shop_id = ? AND p.is_active = 1
       ORDER BY 
         CASE 
           WHEN i.status = 'out_of_stock' THEN 1
@@ -25,12 +26,17 @@ export class Inventory {
           ELSE 3
         END,
         p.name ASC
-    `).all(userId);
+    `).all(shopId);
 
     return rows.map(r => ({
       ...r,
       regional_names: typeof r.regional_names === 'string' ? JSON.parse(r.regional_names || '[]') : r.regional_names
     }));
+  }
+
+  // Alias for backward compatibility
+  static getAllByUser(shopOrUserId) {
+    return this.getAllByShop(shopOrUserId);
   }
 
   static getByProductId(productId) {
@@ -46,7 +52,8 @@ export class Inventory {
         p.purchase_price,
         p.selling_price,
         p.min_stock_threshold,
-        p.reorder_quantity
+        p.reorder_quantity,
+        p.image_url
       FROM inventory i
       JOIN products p ON i.product_id = p.id
       WHERE i.product_id = ?
@@ -73,8 +80,8 @@ export class Inventory {
     return this.getByProductId(productId);
   }
 
-  static getLowStock(userId) {
-    return this.getAllByUser(userId).filter(item => 
+  static getLowStock(shopId) {
+    return this.getAllByShop(shopId).filter(item => 
       item.status === 'low_stock' || item.status === 'out_of_stock'
     );
   }

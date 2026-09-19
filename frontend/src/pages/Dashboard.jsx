@@ -17,9 +17,11 @@ import {
   ShoppingBag,
   Volume2
 } from 'lucide-react';
+import { speakText as speakAudio } from '../utils/speechService';
+import { localizeEntity } from '../utils/transliterate';
 
 export default function Dashboard({ setActiveTab }) {
-  const { user, language } = useAuth();
+  const { user, language, t } = useAuth();
   const [summary, setSummary] = useState(null);
   const [inventory, setInventory] = useState([]);
   const [transactions, setTransactions] = useState([]);
@@ -70,15 +72,13 @@ export default function Dashboard({ setActiveTab }) {
           <div className="max-w-xl">
             <span className="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-white mb-3">
               <Sparkles className="w-3.5 h-3.5 text-amber-200" />
-              <span>{language === 'hi-IN' ? 'नमस्ते' : 'Welcome back'}, {user?.name || 'Shopkeeper'}!</span>
+              <span>{t('welcomeBack')}, {localizeEntity(user?.name, language) || 'Shopkeeper'}!</span>
             </span>
             <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-white">
-              {user?.store_name || 'Sharma Kirana Store'}
+              {localizeEntity(user?.store_name, language) || 'Sharma Kirana Store'}
             </h1>
             <p className="text-orange-100 text-xs sm:text-sm mt-2 leading-relaxed">
-              {language === 'hi-IN'
-                ? 'माइक दबाकर बोलें — स्टॉक जोड़ें, बेचें या हिसाब पूछें।'
-                : 'Manage your Kirana stock completely by voice. Add stock, record sales, and check balances without typing.'}
+              {t('speakToUpdate')}
             </p>
           </div>
 
@@ -93,11 +93,26 @@ export default function Dashboard({ setActiveTab }) {
 
         {/* Spoken Store Summary Bar */}
         {summary?.voiceSummary && (
-          <div className="relative z-10 mt-6 pt-5 border-t border-white/20 flex items-start gap-2.5 text-xs text-orange-50 font-medium">
-            <Volume2 className="w-4 h-4 text-amber-200 flex-shrink-0 mt-0.5" />
-            <p className="italic">
-              "{language === 'hi-IN' ? summary.voiceSummary.hindi : summary.voiceSummary.hinglish}"
-            </p>
+          <div className="relative z-10 mt-6 pt-5 border-t border-white/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-orange-50 font-medium">
+            <div className="flex items-start gap-2.5">
+              <Volume2 className="w-4 h-4 text-amber-200 flex-shrink-0 mt-0.5" />
+              <p className="italic">
+                "{language === 'hi-IN' ? summary.voiceSummary.hindi : (summary.voiceSummary.english || summary.voiceSummary.hinglish)}"
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                const textToSpeak = language === 'hi-IN' 
+                  ? summary.voiceSummary.hindi 
+                  : (summary.voiceSummary.english || summary.voiceSummary.hinglish);
+                speakAudio(textToSpeak, language);
+              }}
+              className="self-start sm:self-center flex-shrink-0 bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm"
+              title="Play voice summary"
+            >
+              <Volume2 className="w-3.5 h-3.5" />
+              <span>{language === 'hi-IN' ? 'हिसाब सुनें' : (language === 'te-IN' ? 'వినండి' : (language === 'ta-IN' ? 'கேளுங்கள்' : (language === 'bn-IN' ? 'শুনুন' : 'Listen')))}</span>
+            </button>
           </div>
         )}
 
@@ -106,40 +121,54 @@ export default function Dashboard({ setActiveTab }) {
       </div>
 
       {/* KPI Metrics Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
-        <StockCard
-          title={language === 'hi-IN' ? 'कुल सामान' : 'Total Items'}
-          value={metrics.totalProducts}
-          subtitle={language === 'hi-IN' ? `${metrics.inStockCount || 0} स्टॉक में उपलब्ध` : `${metrics.inStockCount || 0} in good stock`}
-          icon={Package}
-          color="blue"
-          language={language}
-        />
-        <StockCard
-          title={language === 'hi-IN' ? 'कुल स्टॉक मूल्य' : 'Stock Value'}
-          value={`₹${metrics.totalStockValue?.toLocaleString('en-IN') || 0}`}
-          subtitle={language === 'hi-IN' ? 'अनुमानित बिक्री मूल्य' : 'Estimated retail value'}
-          icon={IndianRupee}
-          color="emerald"
-          language={language}
-        />
-        <StockCard
-          title={language === 'hi-IN' ? 'कम स्टॉक वाले' : 'Low Stock Alerts'}
-          value={metrics.lowStockCount + (metrics.outOfStockCount || 0)}
-          subtitle={language === 'hi-IN' ? 'तुरंत रीऑर्डर करें' : 'Needs attention'}
-          icon={AlertTriangle}
-          color="rose"
-          language={language}
-        />
-        <StockCard
-          title={language === 'hi-IN' ? 'आज की बिक्री' : "Today's Sales"}
-          value={`₹${metrics.todaySalesAmount?.toLocaleString('en-IN') || 0}`}
-          subtitle={language === 'hi-IN' ? `${metrics.todaySalesCount || 0} ट्रांजैक्शन आज` : `${metrics.todaySalesCount || 0} sales recorded`}
-          icon={TrendingUp}
-          color="orange"
-          language={language}
-        />
-      </div>
+      {loading ? (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="bg-white rounded-2xl border border-slate-200 p-5 h-28 animate-pulse flex flex-col justify-between">
+              <div className="flex justify-between items-center">
+                <div className="w-16 h-4 bg-slate-200 rounded"></div>
+                <div className="w-8 h-8 bg-slate-200 rounded-xl"></div>
+              </div>
+              <div className="w-24 h-6 bg-slate-200 rounded"></div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
+          <StockCard
+            title={t('totalItems')}
+            value={metrics.totalProducts}
+            subtitle={`${metrics.inStockCount || 0} ${t('inStock')}`}
+            icon={Package}
+            color="blue"
+            language={language}
+          />
+          <StockCard
+            title={t('stockValue')}
+            value={`₹${metrics.totalStockValue?.toLocaleString('en-IN') || 0}`}
+            subtitle={t('wholesaleEstimate')}
+            icon={IndianRupee}
+            color="emerald"
+            language={language}
+          />
+          <StockCard
+            title={t('lowStock')}
+            value={metrics.lowStockCount + (metrics.outOfStockCount || 0)}
+            subtitle={t('urgentAlerts')}
+            icon={AlertTriangle}
+            color="rose"
+            language={language}
+          />
+          <StockCard
+            title={t('todaySales')}
+            value={`₹${metrics.todaySalesAmount?.toLocaleString('en-IN') || 0}`}
+            subtitle={`${metrics.todaySalesCount || 0} ${t('recentTransactions')}`}
+            icon={TrendingUp}
+            color="orange"
+            language={language}
+          />
+        </div>
+      )}
 
       {/* Active Alerts Banner */}
       {activeAlerts.length > 0 && (
@@ -147,7 +176,7 @@ export default function Dashboard({ setActiveTab }) {
           <div className="flex items-center justify-between">
             <h2 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
               <AlertTriangle className="w-5 h-5 text-rose-500" />
-              <span>{language === 'hi-IN' ? 'स्टॉक अलर्ट (जरूरी सामान)' : 'Urgent Restock Alerts'}</span>
+              <span>{t('urgentAlerts')}</span>
               <span className="bg-rose-100 text-rose-800 text-xs px-2 py-0.5 rounded-full font-bold">
                 {activeAlerts.length}
               </span>
@@ -156,7 +185,7 @@ export default function Dashboard({ setActiveTab }) {
               onClick={() => setActiveTab('alerts')}
               className="text-xs font-bold text-orange-600 hover:text-orange-700 flex items-center gap-1"
             >
-              <span>{language === 'hi-IN' ? 'सब देखें' : 'View All'}</span>
+              <span>{t('viewAll')}</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -182,13 +211,13 @@ export default function Dashboard({ setActiveTab }) {
           <div className="flex items-center justify-between">
             <h2 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
               <ShoppingBag className="w-5 h-5 text-orange-500" />
-              <span>{language === 'hi-IN' ? 'दुकान का मुख्य सामान' : 'Stock Overview'}</span>
+              <span>{t('stockOverview')}</span>
             </h2>
             <button
               onClick={() => setActiveTab('inventory')}
               className="text-xs font-bold text-orange-600 hover:text-orange-700 flex items-center gap-1"
             >
-              <span>{language === 'hi-IN' ? 'पूरी लिस्ट देखें' : 'Full Catalog'}</span>
+              <span>{t('inventory')}</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -209,13 +238,13 @@ export default function Dashboard({ setActiveTab }) {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-extrabold text-slate-900">
-              {language === 'hi-IN' ? 'हाल की गतिविधियां' : 'Recent Transactions'}
+              {t('recentTransactions')}
             </h2>
             <button
               onClick={() => setActiveTab('transactions')}
               className="text-xs font-bold text-orange-600 hover:text-orange-700 flex items-center gap-1"
             >
-              <span>{language === 'hi-IN' ? 'पूरा हिसाब' : 'All'}</span>
+              <span>{t('viewAll')}</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -223,7 +252,7 @@ export default function Dashboard({ setActiveTab }) {
           <div className="space-y-3">
             {transactions.length === 0 ? (
               <div className="bg-white rounded-2xl border border-slate-200 p-6 text-center text-slate-400 text-xs">
-                No recent transactions recorded today.
+                {t('noTransactions')}
               </div>
             ) : (
               transactions.map((tx) => (

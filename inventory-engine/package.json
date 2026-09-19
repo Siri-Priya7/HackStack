@@ -1,0 +1,19 @@
+{
+  "name": "voice-inventory-engine",
+  "version": "1.0.0",
+  "description": "Stock calculations, trade unit conversions, and alerts for voice inventory management",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "test": "node --test"
+  },
+  "keywords": [
+    "inventory",
+    "kirana",
+    "trade-units",
+    "unit-converter",
+    "stock-manager"
+  ],
+  "author": "Person 4",
+  "license": "MIT"
+}

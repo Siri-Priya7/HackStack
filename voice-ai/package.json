@@ -1,0 +1,20 @@
+{
+  "name": "voice-ai",
+  "version": "1.0.0",
+  "description": "Multilingual speech recognition, intent parsing, and entity extraction for Indian retail voice commands",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "test": "node test/voiceTest.js"
+  },
+  "keywords": [
+    "voice",
+    "speech-recognition",
+    "nlp",
+    "hinglish",
+    "kirana",
+    "inventory-voice"
+  ],
+  "author": "Person 3",
+  "license": "MIT"
+}

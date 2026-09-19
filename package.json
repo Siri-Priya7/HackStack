@@ -1,0 +1,24 @@
+{
+  "name": "voice-inventory-management",
+  "version": "1.0.0",
+  "description": "Voice-Based Inventory Management for Small Indian Businesses",
+  "scripts": {
+    "dev": "concurrently \"npm run dev --prefix backend\" \"npm run dev --prefix frontend\"",
+    "start": "concurrently \"npm start --prefix backend\" \"npm run preview --prefix frontend\"",
+    "install:all": "npm install && npm install --prefix backend && npm install --prefix frontend",
+    "test": "node inventory-engine/test/unitTest.js && node voice-ai/test/voiceTest.js"
+  },
+  "dependencies": {
+    "concurrently": "^9.1.2"
+  },
+  "keywords": [
+    "voice-inventory",
+    "kirana",
+    "hindi",
+    "hinglish",
+    "trade-units",
+    "hackathon"
+  ],
+  "author": "Hackathon Team",
+  "license": "MIT"
+}
